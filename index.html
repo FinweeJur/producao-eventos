@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="description" content="Gestão inteligente de produção cultural: eventos, tarefas, equipe e distribuição automática — offline-first e privado.">
+  <title>Produção Cultural</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-row">
+      <h1 class="app-title">🎭<span class="titulo-texto"> Produção</span></h1>
+      <select id="seletor-evento" class="seletor-evento" aria-label="Evento ativo"></select>
+      <div class="controles-header" role="group" aria-label="Ajustes de exibição e ajuda">
+        <button id="btn-fonte-menos" class="btn-icone btn-fonte" title="Diminuir o texto" aria-label="Diminuir o tamanho do texto">A−</button>
+        <button id="btn-fonte-mais" class="btn-icone btn-fonte" title="Aumentar o texto" aria-label="Aumentar o tamanho do texto">A+</button>
+        <button id="btn-tema" class="btn-icone" title="Tema claro/escuro" aria-label="Alternar entre tema claro e escuro">🌙</button>
+        <button id="btn-ajuda" class="btn-icone" title="Ajuda e tour guiado" aria-label="Abrir ajuda e tour guiado">❓</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="conteudo" class="conteudo" tabindex="-1"></main>
+
+  <nav class="abas" role="tablist" aria-label="Navegação principal">
+    <button class="aba" data-aba="evento" role="tab">📅<span>Evento</span></button>
+    <button class="aba" data-aba="tarefas" role="tab">✅<span>Tarefas</span></button>
+    <button class="aba" data-aba="equipe" role="tab">👥<span>Equipe</span></button>
+    <button class="aba" data-aba="chat" role="tab">💬<span>Chat</span></button>
+  </nav>
+
+  <div id="modal-raiz"></div>
+  <div id="toast-raiz" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
