@@ -36,7 +36,134 @@ python3 -m http.server 8080
 # e abra http://localhost:8080
 ```
 
-Para instalar como app: abra no navegador (Chrome/Edge/Firefox mobile) e use “Adicionar à tela inicial / Instalar app”.
+## 📱 Instalar no celular
+
+### iOS (iPhone / iPad)
+
+1. **Abra o Safari** e acesse a URL do app (ex: `https://producao-cultural.exemplo.com`)
+   - Se estiver rodando localmente: `http://192.168.x.x:8080` (substitua pelo IP do seu PC)
+2. **Toque o ícone de compartilhamento** (caixa com seta para cima, na base da tela)
+3. **Procure por “Adicionar à Tela de Início”** ou “Add to Home Screen”
+4. **Dê um nome** (p.ex., “Produção Cultural”)
+5. **Toque “Adicionar”**
+
+Pronto! O app aparecerá como ícone na sua tela inicial e funcionará como um app nativo (offline-first).
+
+### Android
+
+1. **Abra o Chrome** (ou Edge, Firefox) e acesse a URL do app
+   - Se estiver rodando localmente: `http://192.168.x.x:8080`
+2. **Toque o menu ⋮** (três pontos, no canto superior direito)
+3. **Procure por “Instalar app”** ou “Adicionar à tela inicial”
+   - Alguns navegadores mostram um banner “Instalar” automaticamente na primeira visita
+4. **Confirme** — o app será instalado e aparecerá como ícone na tela inicial
+
+O app funciona **100% offline** após a instalação.
+
+## 💻 Instalar no PC
+
+### Windows
+
+1. **Baixe ou clone o repositório:**
+   ```bash
+   git clone https://github.com/FinweeJur/producao-eventos
+   cd producao-eventos
+   ```
+
+2. **Inicie um servidor local** (Python 3, Node.js, ou qualquer servidor estático):
+   ```bash
+   # Python 3
+   python -m http.server 8080
+
+   # ou Node.js (se tiver http-server instalado)
+   npx http-server -p 8080
+   ```
+
+3. **Abra no navegador:**
+   - Clique [aqui](http://localhost:8080) ou acesse manualmente `http://localhost:8080`
+
+4. **Instale como app** (opcional):
+   - **Chrome/Edge:** Menu ⋮ → “Instalar Produção Cultural”
+   - **Firefox:** Menu ☰ → “Instalar aplicativo”
+   - O ícone aparecerá na barra de tarefas/menu iniciar
+
+5. **(Desktop Linux)** Use o atalho criado:
+   ```bash
+   bash ~/Desktop/abrir-producao-cultural.sh
+   ```
+
+### macOS
+
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/FinweeJur/producao-eventos
+   cd producao-eventos
+   ```
+
+2. **Inicie o servidor:**
+   ```bash
+   python3 -m http.server 8080
+   ```
+
+3. **Abra no navegador:**
+   - Acesse `http://localhost:8080`
+
+4. **Instale como app:**
+   - **Safari:** Menu Compartilhar (↗️) → “Adicionar à Dock”
+   - **Chrome/Edge:** Menu ⋮ → “Instalar Produção Cultural”
+
+5. **Create an Automator script** (opcional, para atalho no Desktop):
+   - Abra **Automator.app**
+   - Novo → “Aplicativo”
+   - Adicione: `open -a “Google Chrome” http://localhost:8080`
+   - Salve como “Produção Cultural.app” na Área de Trabalho
+
+### Linux
+
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/FinweeJur/producao-eventos
+   cd producao-eventos
+   ```
+
+2. **Inicie o servidor:**
+   ```bash
+   python3 -m http.server 8080
+   ```
+
+3. **Abra no navegador:**
+   - Acesse `http://localhost:8080`
+
+4. **Use o atalho do Desktop:**
+   - Um atalho `.desktop` foi criado automaticamente
+   - Duplo clique: `~/Desktop/Produção_Cultural.desktop`
+   - Ou execute: `bash ~/Desktop/abrir-producao-cultural.sh`
+
+5. **Instale como app:**
+   - **Chrome/Chromium:** Menu ⋮ → “Instalar Produção Cultural”
+   - **Firefox:** Menu ☰ → “Instalar aplicativo”
+
+## 🌐 Acessar de outro dispositivo (na mesma rede)
+
+Se quiser usar o app de outro celular/tablet na mesma rede WiFi:
+
+1. **Encontre o IP do seu PC:**
+   ```bash
+   # Linux/macOS
+   ifconfig | grep “inet “
+
+   # Windows
+   ipconfig
+   ```
+   (procure por algo como `192.168.1.x` ou `10.0.0.x`)
+
+2. **No celular, acesse:**
+   ```
+   http://[IP-DO-PC]:8080
+   ```
+   Exemplo: `http://192.168.1.50:8080`
+
+3. **Instale como app no celular** seguindo o tutorial acima
 
 ### Chatbot com Ollama (opcional)
 
