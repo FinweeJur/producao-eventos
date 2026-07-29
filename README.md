@@ -216,4 +216,4 @@ sw.js                 service worker (offline)
 
 ## Licença
 
-MIT
+Apache-2.0
