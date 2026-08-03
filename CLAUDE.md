@@ -40,7 +40,7 @@ App **PWA offline-first** de gestão inteligente de produção cultural. Zero de
 │   └── icon-512.png        # PWA splash screen
 ├── README.md               # Guia completo de funcionalidades e instalação
 ├── CLAUDE.md               # Este arquivo
-└── LICENSE                 # MIT
+└── LICENSE                 # Apache-2.0
 
 ```
 
