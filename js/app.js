@@ -4,16 +4,23 @@ import { db } from './db.js';
 import { renderEvento, abrirWizardEvento } from './views/evento.js';
 import { renderTarefas } from './views/tarefas.js';
 import { renderEquipe } from './views/equipe.js';
+import { renderConvidados } from './views/convidados.js';
 import { renderChat } from './views/chat.js';
 import { iniciarTour, abrirAjuda } from './ajuda.js';
+import { lerConfig } from './canais.js';
+import { totalPendente } from './automacao.js';
 
-const VIEWS = { evento: renderEvento, tarefas: renderTarefas, equipe: renderEquipe, chat: renderChat };
+const VIEWS = {
+  evento: renderEvento, tarefas: renderTarefas, equipe: renderEquipe,
+  convidados: renderConvidados, chat: renderChat,
+};
 
 const ctx = {
   eventos: [],
   evento: null,
   tarefas: [],
   pessoas: [],
+  convidados: [],
   abaAtiva: localStorage.getItem('abaAtiva') || 'evento',
   recarregar,
   selecionarEvento,
@@ -32,6 +39,7 @@ async function carregarDados() {
   const idSalvo = localStorage.getItem('eventoAtivo');
   ctx.evento = ctx.eventos.find((e) => e.id === idSalvo) || ctx.eventos[0] || null;
   ctx.tarefas = ctx.evento ? await db.tarefasDoEvento(ctx.evento.id) : [];
+  ctx.convidados = ctx.evento ? await db.convidadosDoEvento(ctx.evento.id) : [];
 }
 
 function atualizarSeletor() {
@@ -61,18 +69,22 @@ function renderAba() {
   VIEWS[ctx.abaAtiva](conteudo, ctx);
 }
 
-// Selo com o nº de tarefas pendentes na aba Tarefas — o que falta, à vista.
+// Selos nas abas: tarefas pendentes e mensagens que a automação recomenda hoje.
+function selo(aba, quantidade, rotulo) {
+  const botao = document.querySelector(`.aba[data-aba="${aba}"]`);
+  botao.querySelector('.badge-aba')?.remove();
+  if (!quantidade) return;
+  const s = document.createElement('span');
+  s.className = 'badge-aba';
+  s.textContent = quantidade > 99 ? '99+' : quantidade;
+  s.setAttribute('aria-label', `${quantidade} ${rotulo}`);
+  botao.append(s);
+}
+
 function atualizarBadge() {
-  const aba = document.querySelector('.aba[data-aba="tarefas"]');
-  aba.querySelector('.badge-aba')?.remove();
-  const pendentes = ctx.tarefas.filter((t) => t.status !== 'concluida').length;
-  if (pendentes) {
-    const selo = document.createElement('span');
-    selo.className = 'badge-aba';
-    selo.textContent = pendentes > 99 ? '99+' : pendentes;
-    selo.setAttribute('aria-label', `${pendentes} tarefas pendentes`);
-    aba.append(selo);
-  }
+  selo('tarefas', ctx.tarefas.filter((t) => t.status !== 'concluida').length, 'tarefas pendentes');
+  selo('convidados', ctx.evento ? totalPendente(ctx.evento, ctx.convidados, lerConfig()) : 0,
+    'mensagens para enviar hoje');
 }
 
 async function recarregar(renderizar = true) {

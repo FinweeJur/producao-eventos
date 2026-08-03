@@ -16,7 +16,21 @@ App **PWA offline-first** de gestão inteligente de produção cultural, para pr
   - `Sugira quem pode cuidar da divulgação`
   - `Quanto tempo falta no setor de infraestrutura?`
   - `Me dê um resumo do evento`
-- **Exportação do documento geral do evento** — relatório completo (ficha, equipe e tarefas por setor) em **PDF** (via impressão do navegador), **Word (.doc)** e **Excel (.xls)**, além de **CSV** só com as tarefas. Tudo gerado no dispositivo, sem serviços externos.
+- **Convidados e confirmação de presença** — importe a planilha (CSV do Excel/Sheets, ou colada) com nome, telefone/WhatsApp, e-mail, grupo e acompanhantes; o app deduplica, normaliza os telefones e mantém a lista com ✅ confirmado / 🤔 talvez / ❌ não vem / ⚪ sem resposta, taxa de resposta e **público previsto** (com acompanhantes).
+- **Rotina de automação (WhatsApp e Telegram)** — o app calcula sozinho o que precisa sair hoje e mostra na aba Convidados:
+  | Mensagem | Quando |
+  |---|---|
+  | Convite | ao entrar na lista |
+  | **Confirmação de presença** (“você vem mesmo?”) | 7 dias antes |
+  | Cobrança de resposta | 3 dias antes, só para quem não respondeu |
+  | Lembrete de véspera (com link da sala) | 1 dia antes, só para quem confirmou |
+  | Agradecimento | depois do evento |
+
+  O envio é em fila, uma pessoa por vez, com o texto à vista para editar antes de disparar. **WhatsApp** abre com a mensagem pronta (link `wa.me`, sem API e sem servidor); **Telegram** envia direto pelo seu bot, e o botão “🔄 Sincronizar respostas” lê os *SIM / NÃO / TALVEZ* recebidos e atualiza a lista sozinho. Todos os textos e prazos são editáveis em ⚙️ Automação, com variáveis (`{nome}`, `{evento}`, `{data}`, `{local}`, `{link}`…).
+- **Resumo diário da produção** — tarefas concluídas, críticas em aberto e placar de confirmações num texto pronto para o grupo da equipe (ou enviado direto pelo bot).
+- **Link de reunião automático** — sala Jitsi Meet gerada a partir do evento, incluída nas mensagens pelo `{link}`.
+- **Worker opcional de lembretes** — `automacao/worker.mjs` (Node 18+, zero dependências) roda os mesmos disparos sem o app aberto, por Telegram. Veja [automacao/README.md](automacao/README.md).
+- **Exportação do documento geral do evento** — relatório completo (ficha, equipe, convidados e tarefas por setor) em **PDF** (via impressão do navegador), **Word (.doc)** e **Excel (.xls)**, além de **CSV** só com as tarefas. Tudo gerado no dispositivo, sem serviços externos.
 - **PWA instalável**, modo claro/escuro (🌙/☀️ no topo), mobile-first e acessível (fontes generosas, alvos de toque grandes, foco visível, `prefers-reduced-motion` respeitado).
 - **Feito para quem nunca usou um gestor de tarefas:**
   - 🔦 **Tour guiado** no primeiro uso (5 passos com holofote sobre a interface, revisitável pelo ❓);
@@ -183,11 +197,11 @@ Sem Ollama o chat continua funcionando em modo básico (regras), inclusive crian
 ```
 
 - **Frontend:** HTML5 + CSS3 + JavaScript puro (ES Modules) — zero dependências, zero build.
-- **Dados:** IndexedDB (stores `eventos`, `pessoas`, `tarefas`), wrapper próprio em `js/db.js`.
+- **Dados:** IndexedDB (stores `eventos`, `pessoas`, `tarefas`, `convidados` (v2)), wrapper próprio em `js/db.js`.
 - **Offline:** service worker (`sw.js`) com precache do app shell.
 
 ```
-index.html            app shell (abas Evento | Tarefas | Equipe | Chat)
+index.html            app shell (abas Evento | Tarefas | Equipe | Convidados | Chat)
 css/style.css         tema claro/escuro, mobile-first
 js/app.js             orquestrador (estado, abas, seletor de evento, tema)
 js/db.js              camada IndexedDB
@@ -195,8 +209,13 @@ js/templates.js       modelos de evento com tarefas típicas
 js/distribuir.js      algoritmo de distribuição (topológica + carga + aptidão)
 js/relatorio.js       documento geral do evento (PDF/Word/Excel/CSV)
 js/ui.js              helpers (modal, toast, confete, avatar)
-js/views/*.js         telas: evento, tarefas, equipe, chat
+js/convidados.js      lista de presença: CSV, telefones, estatísticas, leitura de respostas
+js/mensagens.js       modelos de mensagem e variáveis ({nome}, {evento}, {link}…)
+js/canais.js          WhatsApp (wa.me) e Telegram (Bot API) + configuração local
+js/automacao.js       regras de quando disparar cada mensagem
+js/views/*.js         telas: evento, tarefas, equipe, convidados, chat
 sw.js                 service worker (offline)
+automacao/worker.mjs  worker opcional de lembretes em Node (Telegram)
 ```
 
 ## Privacidade (privacy by design)
@@ -204,6 +223,9 @@ sw.js                 service worker (offline)
 - Dados só em IndexedDB, no dispositivo. Sem conta obrigatória, sem analytics, sem rastreadores.
 - O chatbot roda via Ollama **local**; nenhuma conversa sai do dispositivo (a menos que você configure um servidor Ollama próprio).
 - O service worker nunca intercepta chamadas a outras origens.
+- **WhatsApp** é só um link `wa.me`: nenhum dado é enviado por nós, o disparo é você tocando “enviar” no seu WhatsApp.
+- **Telegram** é opt-in: o app só fala com `api.telegram.org` depois que você cadastra o token de um bot **seu**. Sem token, nada sai do aparelho. O token fica no `localStorage` deste navegador — em aparelho compartilhado, prefira o WhatsApp.
+- O `dados.json` do worker leva contatos e token: trate-o como a planilha original.
 
 ## Roadmap
 
@@ -211,7 +233,9 @@ sw.js                 service worker (offline)
 - [x] **Fase 2 — Inteligência:** algoritmo de sugestão de delegação, aptidões, visão por pessoa, subtarefas e dependências
 - [x] **Fase 3 — Chatbot:** integração Ollama com detecção automática + fallback por regras
 - [x] **Fase 4 — Polimento (parcial):** PWA offline, exportação CSV, modo escuro, acessibilidade
-- [ ] **Fase 5 — Notificações e automação:** Notification Worker local (node-cron) com lembretes por Telegram/e-mail/WhatsApp, resumos diários e envio automático de link de reunião (Jitsi Meet)
+- [x] **Fase 5 — Notificações e automação:** lista de convidados importada de planilha, rotina de confirmação de presença por **WhatsApp e Telegram**, cobrança e lembrete de véspera, leitura automática das respostas do bot, resumo diário para a equipe, link de reunião (Jitsi Meet) e worker opcional em Node (`automacao/worker.mjs`)
+- [ ] **Fase 6 — Notificações no próprio aparelho:** lembretes locais via Notifications API/Periodic Background Sync, para o app avisar sem depender de você abri-lo
+- [ ] E-mail como terceiro canal (hoje só WhatsApp e Telegram)
 - [ ] Sincronização multiusuário opcional (backend leve com criptografia de ponta a ponta)
 
 ## Licença

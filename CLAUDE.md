@@ -207,7 +207,7 @@ const ctx = {
 
 - Versão atual: **v1.0** (MVP completo)
   - ✅ Fase 1-4: core features, inteligência, chatbot, polimento
-  - ⏳ Fase 5: notificações + automação (não implementado)
+  - ✅ Fase 5: convidados, confirmação de presença e automação (WhatsApp/Telegram, resumo diário, Jitsi, worker Node)
 
 - Branch: `main` (stable)
 - Todos os dados vêm do GitHub: https://github.com/FinweeJur/producao-eventos
@@ -226,15 +226,31 @@ OLLAMA_ORIGINS='*' ollama serve &
 curl http://localhost:11434/api/generate -d '{"model":"llama3:8b","prompt":"Olá"}'
 ```
 
-## Próximas melhorias (Fase 5+)
+## Convidados e automação (Fase 5, implementada)
 
+- **Store `convidados`** (IndexedDB v2, índice `eventoId`): `nome, telefone (E.164 só dígitos), email,
+  telegramChatId, grupo, acompanhantes, observacao, status, envios{regraId: ISO}, respondidoEm, respostaTexto`.
+  `status` ∈ `pendente | convidado | confirmado | talvez | recusado`.
+- **`js/convidados.js`** — puro (sem DOM): parser de CSV/TSV com aliases de cabeçalho, normalização de
+  telefone brasileiro, dedupe por telefone/e-mail/nome, estatísticas e `interpretarResposta()` (SIM/NÃO/TALVEZ).
+- **`js/automacao.js`** — `REGRAS` (convite, confirmacao D-7, cobranca D-3, lembrete D-1, agradecimento D+1)
+  e `pendencias(evento, convidados, config)`: a fonte única de "o que enviar hoje". Uma regra nunca repete
+  (grava em `convidado.envios`) e `cobranca` exige `confirmacao` já enviada.
+- **`js/canais.js`** — WhatsApp por link `wa.me` (sem API) e Telegram por Bot API direto do navegador
+  (`sendMessage`, `getUpdates` com offset guardado). Config em `localStorage['automacao']`.
+- **`js/mensagens.js`** — `MODELOS_PADRAO` + `renderizar()` de variáveis `{nome} {evento} {data} {local} {link}…`;
+  o usuário pode sobrescrever cada texto em ⚙️ Automação.
+- **`automacao/worker.mjs`** — Node 18+, sem dependências, **importa os mesmos módulos do app** para a regra
+  não existir em duas versões. Opera sobre o `dados.json` exportado pela tela (Convidados → 🤖 Worker).
+- Ao mexer nas regras ou nos modelos, mexa em `automacao.js` / `mensagens.js` — nunca duplique no worker.
+
+## Próximas melhorias (Fase 6+)
+
+- [ ] Notificações locais no aparelho (Notifications API / Periodic Background Sync)
+- [ ] E-mail como terceiro canal
 - [ ] Sincronização multiusuário (backend leve + E2E encryption)
-- [ ] Notificações (Telegram, e-mail, WhatsApp via Notification Worker)
-- [ ] Lembretes automáticos + resumos diários
-- [ ] Integração Jitsi Meet (gerar links de reunião)
-- [ ] Importação de CSV/Excel
 - [ ] Undo/Redo (histórico)
 
 ## Licença
 
-MIT — Use, modifique, distribua livremente.
+Apache-2.0 — ver LICENSE.

@@ -7,6 +7,7 @@ const PASSOS = [
   { alvo: '.aba[data-aba="evento"]', titulo: 'Crie o evento', texto: 'Escolha um modelo pronto (Seminário, Show, Manifestação) e ele já vem com as tarefas típicas — é só desmarcar o que não servir.' },
   { alvo: '.aba[data-aba="equipe"]', titulo: 'Cadastre a equipe', texto: 'Diga quem é coordenador, voluntário ou terceirizado e o que cada pessoa sabe fazer.' },
   { alvo: '.aba[data-aba="tarefas"]', titulo: 'Distribua as tarefas', texto: 'O botão 🪄 sugere quem cuida do quê: tarefas críticas vão para a coordenação, as leves para quem tem aptidão. Você só confirma.' },
+  { alvo: '.aba[data-aba="convidados"]', titulo: 'Confirme quem vem', texto: 'Importe a planilha de convidados e o app cuida da confirmação: manda a mensagem na hora certa por WhatsApp ou Telegram e vai fechando a lista com quem respondeu.' },
   { alvo: '.aba[data-aba="chat"]', titulo: 'Converse com o app', texto: 'Escreva em português: “adicionar tarefa…”, “o que está sem responsável?”, “me dê um resumo”.' },
   { alvo: '.controles-header', titulo: 'Do seu jeito', texto: 'Aqui em cima: texto maior ou menor (A− / A+), tema claro/escuro e esta ajuda, sempre que precisar.' },
 ];
@@ -68,6 +69,13 @@ export function proximoPasso(ctx) {
   if (semDono.length) {
     return { texto: `${semDono.length} tarefa(s) ainda sem responsável. Toque em 🪄 Distribuir e o app sugere quem cuida do quê.`, rotulo: '🪄 Distribuir tarefas', aba: 'tarefas' };
   }
+  if (!(ctx.convidados || []).length) {
+    return { texto: 'Traga a planilha de convidados. Com a lista no app, a rotina de automação passa a pedir a confirmação de presença por WhatsApp ou Telegram.', rotulo: '🎟 Importar convidados', aba: 'convidados' };
+  }
+  const semResposta = ctx.convidados.filter((c) => c.status === 'pendente' || c.status === 'convidado');
+  if (semResposta.length) {
+    return { texto: `${semResposta.length} convidado(s) ainda não responderam se vêm. A rotina já tem a mensagem pronta.`, rotulo: '🤖 Ver automação', aba: 'convidados' };
+  }
   return null;
 }
 
@@ -84,7 +92,15 @@ export function cartaoProximoPasso(ctx) {
 export function abrirAjuda(ctx) {
   const corPapel = { coordenador: '#7c3aed', voluntario: '#059669', terceirizado: '#d97706' };
   abrirModal('Como o app funciona', el('div', {},
-    el('p', {}, 'O fluxo tem 4 passos: criar o evento → cadastrar a equipe → distribuir as tarefas → acompanhar (pelo kanban ou pelo Chat).'),
+    el('p', {}, 'O fluxo tem 5 passos: criar o evento → cadastrar a equipe → distribuir as tarefas → confirmar os convidados → acompanhar (pelo kanban ou pelo Chat).'),
+
+    el('h2', { class: 'titulo-ajuda' }, 'Confirmação de presença'),
+    el('div', { class: 'legenda' },
+      el('span', {}, '📊 Importe a planilha (CSV) com nome e telefone — ou cadastre um a um.'),
+      el('span', {}, '🤖 A rotina avisa o que enviar hoje: convite, confirmação (7 dias antes), cobrança (3), lembrete de véspera e agradecimento.'),
+      el('span', {}, '🟢 WhatsApp abre com a mensagem pronta; ✈️ Telegram envia direto se você cadastrar um bot.'),
+      el('span', {}, '🔄 “Sincronizar respostas” lê os SIM/NÃO que chegaram ao bot e atualiza a lista sozinho.'),
+    ),
 
     el('h2', { class: 'titulo-ajuda' }, 'Os cadeados (criticidade)'),
     el('div', { class: 'legenda' },

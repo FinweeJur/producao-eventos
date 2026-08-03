@@ -5,6 +5,9 @@
 import { db, novoId } from '../db.js';
 import { el, toast, abrirModal, formatarMinutos } from '../ui.js';
 import { distribuirTarefas } from '../distribuir.js';
+import { estatisticas } from '../convidados.js';
+import { pendencias } from '../automacao.js';
+import { lerConfig } from '../canais.js';
 
 const historico = []; // {papel: 'usuario'|'bot', texto}
 let ollamaDisponivel = null; // null = ainda não verificado
@@ -16,6 +19,7 @@ const SUGESTOES = [
   'Sugira quem pode cuidar da divulgação',
   'Quanto tempo falta no total?',
   'Me dê um resumo do evento',
+  'Quantos convidados confirmaram?',
 ];
 
 function urlOllama() { return localStorage.getItem('ollamaUrl') || 'http://localhost:11434'; }
@@ -51,6 +55,7 @@ function contextoJson(ctx) {
       responsavel: (pessoas.find((p) => p.id === t.atribuidaA) || {}).nome || null,
     })),
     equipe: pessoas.map((p) => ({ nome: p.nome, papel: p.papel, aptidoes: p.aptidoes, disponibilidade: p.disponibilidade })),
+    convidados: estatisticas(ctx.convidados || []),
   });
 }
 
@@ -146,6 +151,20 @@ async function responderPorRegras(texto, ctx) {
     return `⏱ ${setorPedido ? `Setor ${setorPedido}` : 'No total'}: faltam ~${formatarMinutos(total)} de trabalho em ${consideradas.length} tarefa(s) pendente(s).`;
   }
 
+  if (/convidad|confirma|presen[çc]a|lista de presen/i.test(q)) {
+    const est = estatisticas(ctx.convidados || []);
+    if (!est.total) return '🎟 Ainda não há convidados. Importe a planilha na aba Convidados — o app reconhece nome, telefone, e-mail e grupo.';
+    const aEnviar = pendencias(evento, ctx.convidados, lerConfig());
+    const total = aEnviar.reduce((s2, p) => s2 + p.convidados.length, 0);
+    return `🎟 Convidados de “${evento.nome}”:
+` +
+      `✅ ${est.confirmado} confirmados · 🤔 ${est.talvez} talvez · ❌ ${est.recusado} não vêm · ⚪ ${est.semResposta} sem resposta
+` +
+      `👤 público previsto: ${est.publico} (com acompanhantes) · ${est.taxaResposta}% responderam` +
+      (total ? `
+🤖 a rotina tem ${total} mensagem(ns) para enviar hoje (${aEnviar.map((p) => p.nome.toLowerCase()).join(', ')}).` : '');
+  }
+
   if (/resumo|status|como est/i.test(q)) {
     const concluidas = tarefas.length - pendentes.length;
     const criticas = pendentes.filter((t) => t.criticidade >= 4);
@@ -154,7 +173,9 @@ async function responderPorRegras(texto, ctx) {
       `✅ ${concluidas}/${tarefas.length} tarefas concluídas\n` +
       `🔴 ${criticas.length} crítica(s) pendente(s)\n` +
       `👤 ${semDono.length} sem responsável\n` +
-      `⏱ faltam ~${formatarMinutos(pendentes.reduce((s, t) => s + (t.tempoEstimadoMinutos || 0), 0))}`;
+      `⏱ faltam ~${formatarMinutos(pendentes.reduce((s, t) => s + (t.tempoEstimadoMinutos || 0), 0))}` +
+      ((ctx.convidados || []).length ? `
+🎟 ${estatisticas(ctx.convidados).confirmado}/${ctx.convidados.length} convidados confirmados` : '');
   }
 
   return 'Posso ajudar com:\n' + SUGESTOES.map((s) => `• ${s}`).join('\n') +

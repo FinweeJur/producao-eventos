@@ -297,3 +297,11 @@ button, select, input { min-height: 40px; }
   .tour-foco { transition: none; }
   .progresso > div { transition: none; }
 }
+
+/* ---------- Convidados (5 abas cabem em telas estreitas) ---------- */
+.aba span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 380px) {
+  .aba { font-size: 1.15rem; }
+  .aba span { font-size: .62rem; }
+  .badge-aba { right: calc(50% - 22px); }
+}

@@ -2,7 +2,7 @@
 // Stores: eventos, pessoas, tarefas. Todos os dados ficam no dispositivo.
 
 const NOME_DB = 'producao-cultural';
-const VERSAO = 1;
+const VERSAO = 2;
 
 let _db = null;
 
@@ -20,6 +20,11 @@ function abrir() {
       }
       if (!db.objectStoreNames.contains('tarefas')) {
         const st = db.createObjectStore('tarefas', { keyPath: 'id' });
+        st.createIndex('eventoId', 'eventoId');
+      }
+      // v2: lista de convidados por evento (confirmação de presença).
+      if (!db.objectStoreNames.contains('convidados')) {
+        const st = db.createObjectStore('convidados', { keyPath: 'id' });
         st.createIndex('eventoId', 'eventoId');
       }
     };
@@ -70,17 +75,30 @@ export const db = {
     await tx(store, 'readwrite', (st) => st.delete(id));
   },
 
-  async tarefasDoEvento(eventoId) {
+  async porEvento(store, eventoId) {
     const db_ = await abrir();
     return new Promise((resolve, reject) => {
-      const req = db_.transaction('tarefas').objectStore('tarefas').index('eventoId').getAll(eventoId);
+      const req = db_.transaction(store).objectStore(store).index('eventoId').getAll(eventoId);
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
   },
 
+  tarefasDoEvento(eventoId) {
+    return this.porEvento('tarefas', eventoId);
+  },
+
+  convidadosDoEvento(eventoId) {
+    return this.porEvento('convidados', eventoId);
+  },
+
   async removerTarefasDoEvento(eventoId) {
     const tarefas = await this.tarefasDoEvento(eventoId);
     for (const t of tarefas) await this.remover('tarefas', t.id);
+  },
+
+  async removerConvidadosDoEvento(eventoId) {
+    const convidados = await this.convidadosDoEvento(eventoId);
+    for (const c of convidados) await this.remover('convidados', c.id);
   },
 };

@@ -3,6 +3,7 @@
 // e Excel (.xls / CSV) — tudo sem dependências externas.
 
 import { formatarMinutos, ROTULO_PAPEL } from './ui.js';
+import { STATUS_CONVIDADO, telefoneLegivel, estatisticas } from './convidados.js';
 
 export const ROTULO_FORMATO = { presencial: 'Presencial', virtual: 'Virtual', hibrido: 'Híbrido' };
 export const ROTULO_ACESSO = { gratuito: 'Gratuito', pago: 'Pago', patrocinado: 'Patrocinado' };
@@ -10,7 +11,20 @@ const ROTULO_STATUS = { pendente: 'Pendente', em_andamento: 'Em andamento', conc
 
 const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function htmlRelatorio(evento, tarefas, pessoas) {
+function htmlConvidados(convidados) {
+  if (!convidados.length) return '';
+  const est = estatisticas(convidados);
+  return `<h2>Convidados</h2>
+  <p>${est.total} na lista · ${est.confirmado} confirmados · ${est.talvez} talvez · ${est.recusado} não vêm ·
+  ${est.semResposta} sem resposta — público previsto: <strong>${est.publico}</strong> (com acompanhantes).</p>
+  <table><thead><tr><th>Nome</th><th>Situação</th><th>Contato</th><th>Grupo</th><th>Acomp.</th><th>Observação</th></tr></thead><tbody>` +
+  [...convidados].sort((a, b) => a.nome.localeCompare(b.nome)).map((c) => `<tr>
+    <td>${esc(c.nome)}</td><td>${STATUS_CONVIDADO[c.status] || c.status}</td>
+    <td>${esc(telefoneLegivel(c.telefone) || c.email)}</td><td>${esc(c.grupo)}</td>
+    <td>${c.acompanhantes || 0}</td><td>${esc(c.observacao)}</td></tr>`).join('') + '</tbody></table>';
+}
+
+function htmlRelatorio(evento, tarefas, pessoas, convidados = []) {
   const nomePessoa = (id) => (pessoas.find((p) => p.id === id) || {}).nome || '—';
   const pendentes = tarefas.filter((t) => t.status !== 'concluida');
   const setores = [...new Set(tarefas.map((t) => t.setor))].sort();
@@ -61,6 +75,7 @@ function htmlRelatorio(evento, tarefas, pessoas) {
   <h2>Dados do evento</h2>
   <table class="detalhes"><tbody>${detalhes.map(([r, v]) => `<tr><td>${r}</td><td>${esc(v)}</td></tr>`).join('')}</tbody></table>
   <h2>Equipe</h2>${linhasEquipe}
+  ${htmlConvidados(convidados)}
   <h2>Tarefas por setor</h2>${linhasTarefas}
   </body></html>`;
 }
@@ -81,24 +96,24 @@ const nomeBase = (evento) => evento.nome.trim()
   .replace(/[^A-Za-z\d-]+/g, '_');
 
 // PDF: abre o relatório numa janela e chama a impressão (Salvar como PDF).
-export function exportarPDF(evento, tarefas, pessoas) {
+export function exportarPDF(evento, tarefas, pessoas, convidados = []) {
   const win = window.open('', '_blank');
   if (!win) return false;
-  win.document.write(htmlRelatorio(evento, tarefas, pessoas));
+  win.document.write(htmlRelatorio(evento, tarefas, pessoas, convidados));
   win.document.close();
   win.addEventListener('load', () => setTimeout(() => win.print(), 150));
   return true;
 }
 
 // Word: arquivo .doc em HTML — o Word/LibreOffice abre e formata normalmente.
-export function exportarWord(evento, tarefas, pessoas) {
-  const html = htmlRelatorio(evento, tarefas, pessoas);
+export function exportarWord(evento, tarefas, pessoas, convidados = []) {
+  const html = htmlRelatorio(evento, tarefas, pessoas, convidados);
   baixar(new Blob(['﻿' + html], { type: 'application/msword' }), `${nomeBase(evento)}_documento.doc`);
 }
 
 // Excel: arquivo .xls em HTML de tabelas — Excel/LibreOffice/Sheets abrem direto.
-export function exportarExcel(evento, tarefas, pessoas) {
-  const html = htmlRelatorio(evento, tarefas, pessoas);
+export function exportarExcel(evento, tarefas, pessoas, convidados = []) {
+  const html = htmlRelatorio(evento, tarefas, pessoas, convidados);
   baixar(new Blob(['﻿' + html], { type: 'application/vnd.ms-excel' }), `${nomeBase(evento)}_documento.xls`);
 }
 

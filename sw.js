@@ -1,5 +1,5 @@
 // Service worker: precache do app shell (offline-first).
-const CACHE = 'producao-cultural-v3';
+const CACHE = 'producao-cultural-v4';
 const SHELL = [
   '.',
   'index.html',
@@ -12,9 +12,14 @@ const SHELL = [
   'js/distribuir.js',
   'js/relatorio.js',
   'js/ajuda.js',
+  'js/convidados.js',
+  'js/mensagens.js',
+  'js/canais.js',
+  'js/automacao.js',
   'js/views/evento.js',
   'js/views/tarefas.js',
   'js/views/equipe.js',
+  'js/views/convidados.js',
   'js/views/chat.js',
   'icons/icon.svg',
 ];

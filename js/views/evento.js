@@ -6,6 +6,7 @@ import { el, abrirModal, toast, confirmar, formatarMinutos, iconeCriticidade, me
 import { TIPOS_EVENTO, TEMPLATES, tarefasDoTemplate } from '../templates.js';
 import { exportarPDF, exportarWord, exportarExcel, exportarCSV, ROTULO_FORMATO, ROTULO_ACESSO } from '../relatorio.js';
 import { cartaoProximoPasso } from '../ajuda.js';
+import { estatisticas } from '../convidados.js';
 
 // Evento de exemplo pronto: quem está começando aprende vendo o app preenchido.
 async function criarExemplo(ctx) {
@@ -146,12 +147,13 @@ export function abrirWizardEvento(ctx) {
 
 function abrirExportacao(ctx) {
   const { evento, tarefas, pessoas } = ctx;
+  const convidados = ctx.convidados || [];
   const opcoes = [
     ['🖨 PDF', 'Documento completo — abre a impressão do navegador (Salvar como PDF)', () => {
-      if (!exportarPDF(evento, tarefas, pessoas)) toast('Libere pop-ups para gerar o PDF.', 'erro');
+      if (!exportarPDF(evento, tarefas, pessoas, convidados)) toast('Libere pop-ups para gerar o PDF.', 'erro');
     }],
-    ['📝 Word (.doc)', 'Documento completo editável no Word/LibreOffice/Google Docs', () => exportarWord(evento, tarefas, pessoas)],
-    ['📊 Excel (.xls)', 'Documento completo em tabelas para Excel/LibreOffice/Sheets', () => exportarExcel(evento, tarefas, pessoas)],
+    ['📝 Word (.doc)', 'Documento completo editável no Word/LibreOffice/Google Docs', () => exportarWord(evento, tarefas, pessoas, convidados)],
+    ['📊 Excel (.xls)', 'Documento completo em tabelas para Excel/LibreOffice/Sheets', () => exportarExcel(evento, tarefas, pessoas, convidados)],
     ['📄 CSV', 'Só a lista de tarefas, em formato universal', () => exportarCSV(evento, tarefas, pessoas)],
   ];
   abrirModal('Exportar documento do evento', el('div', {},
@@ -185,6 +187,8 @@ export async function renderEvento(container, ctx) {
   const criticasSemDono = pendentes.filter((t) => t.criticidade >= 4 && !t.atribuidaA);
   const tipoNome = (TIPOS_EVENTO.find((t) => t.id === evento.tipo) || {}).nome || evento.tipo;
 
+  const estConvidados = estatisticas(ctx.convidados || []);
+
   const passo = cartaoProximoPasso(ctx);
   if (passo) container.append(passo);
 
@@ -207,6 +211,7 @@ export async function renderEvento(container, ctx) {
         `${tarefas.length - pendentes.length}/${tarefas.length} tarefas concluídas`,
         `⏱ faltam ~${formatarMinutos(tempoRestante)}`,
         `👥 ${pessoas.length} na equipe`,
+        ctx.convidados?.length ? `🎟 ${estConvidados.confirmado}/${estConvidados.total} confirmados` : null,
       ),
       criticasSemDono.length
         ? el('p', { class: 'conflito' }, `⚠️ ${criticasSemDono.length} tarefa(s) crítica(s) sem responsável — use “Distribuir tarefas” na aba Tarefas.`)
@@ -226,8 +231,9 @@ export async function renderEvento(container, ctx) {
         } }, '✏️ Editar'),
         el('button', { class: 'btn btn-suave', onclick: () => abrirExportacao(ctx) }, '📄 Exportar'),
         el('button', { class: 'btn btn-perigo', onclick: async () => {
-          if (!await confirmar(`Excluir “${evento.nome}” e todas as suas tarefas? Essa ação não pode ser desfeita.`)) return;
+          if (!await confirmar(`Excluir “${evento.nome}”, suas tarefas e a lista de convidados? Essa ação não pode ser desfeita.`)) return;
           await db.removerTarefasDoEvento(evento.id);
+          await db.removerConvidadosDoEvento(evento.id);
           await db.remover('eventos', evento.id);
           toast('Evento excluído.');
           await ctx.selecionarEvento(null);
